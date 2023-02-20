@@ -1,5 +1,6 @@
 package com.camilo.antonio.javafxjdbc;
 
+import com.camilo.antonio.javafxjdbc.gui.listeners.DataChangeListener;
 import com.camilo.antonio.javafxjdbc.gui.util.Alerts;
 import com.camilo.antonio.javafxjdbc.gui.util.Constraints;
 import com.camilo.antonio.javafxjdbc.gui.util.Utils;
@@ -15,9 +16,13 @@ import model.entities.Department;
 import model.services.DepartmentService;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 public class DepartmentFormController implements Initializable {
+
+    private List<DataChangeListener> dataChangeListeners = new ArrayList<>();
 
     private Department entity;
 
@@ -46,6 +51,10 @@ public class DepartmentFormController implements Initializable {
         this.service = service;
     }
 
+    public void subscribeDataChangeListener(DataChangeListener listener) {
+        dataChangeListeners.add(listener);
+    }
+
     @FXML
     public void onBtnSaveAction(ActionEvent event) {
         if (entity == null) {
@@ -58,9 +67,16 @@ public class DepartmentFormController implements Initializable {
         try {
             entity = getFormData();
             service.saveOrUpdate(entity);
+            notifyDataChangeListeners();
             Utils.currentStage(event).close();
         } catch (DbException e) {
             Alerts.showAlert("Error saving object", null, e.getMessage(), Alert.AlertType.ERROR);
+        }
+    }
+
+    private void notifyDataChangeListeners() {
+        for(DataChangeListener listener: dataChangeListeners){
+            listener.onDataChanged();
         }
     }
 
@@ -76,7 +92,6 @@ public class DepartmentFormController implements Initializable {
     public void onBtnCancelAction(ActionEvent event) {
         Utils.currentStage(event).close();
     }
-
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
